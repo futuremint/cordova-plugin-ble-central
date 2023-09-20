@@ -11,6 +11,12 @@ page](https://github.com/don/cordova-plugin-ble-central).**
 This page covers only additional installation requirements and extended API.
 
 ---
+-   Scan for peripherals
+-   Connect to a peripheral
+-   Read the value of a characteristic
+-   Write new value to a characteristic
+-   Get notified when characteristic's value changes
+-   Transfer data via L2CAP channels
 
 # Requirements
 
@@ -28,38 +34,40 @@ For using this plugin on iOS, there are some additional requirements:
 
 ### PhoneGap Build
 
-Edit config.xml to install the plugin for [PhoneGap Build](http://build.phonegap.com).
-
-    <gap:plugin name="cordova-plugin-ble-central" source="npm" />
-    <preference name="phonegap-version" value="cli-6.1.0" />
-
-### PhoneGap Developer App
-
-This plugin is included in iOS and Android versions of the [PhoneGap Developer App](http://app.phonegap.com/).
-
-Note that this plugin's id changed from `com.megster.cordova.ble` to `cordova-plugin-ble-central` as part of the migration from the [Cordova plugin repo](http://plugins.cordova.io/) to [npm](https://www.npmjs.com/).
+-   `accessBackgroundLocation`: [**Android**] Tells the plugin to request the `ACCESS_BACKGROUND_LOCATION` permission on Android 10 & Android 11 in order for scanning to function when the app is not visible.
 
 ### iOS
 
-For iOS, apps will crash unless they include usage description keys for the types of data they access. Applications targeting iOS 13 and later, define [NSBluetoothAlwaysUsageDescription](https://developer.apple.com/documentation/bundleresources/information_property_list/nsbluetoothalwaysusagedescription?language=objc) to tell the user why the application needs Bluetooth. For apps with a deployment target earlier than iOS 13, add [NSBluetoothPeripheralUsageDescription](https://developer.apple.com/documentation/bundleresources/information_property_list/nsbluetoothperipheralusagedescription?language=objc). Both of these keys can be set when installing the plugin by passing the BLUETOOTH_USAGE_DESCRIPTION variable.
+After installation, the following additions should be made to the app's `Info.plist`
 
-    $ cordova plugin add cordova-plugin-ble-central --variable BLUETOOTH_USAGE_DESCRIPTION="Your description here"
+-   Set [NSBluetoothAlwaysUsageDescription](https://developer.apple.com/documentation/bundleresources/information_property_list/nsbluetoothalwaysusagedescription?language=objc) to a descriptive text, to be shown to the user on first access to the Bluetooth adapter. **If this is not defined the app will crash**.
+-   _(Optional)_ Add `bluetooth-central` to [UIBackgroundModes](https://developer.apple.com/documentation/bundleresources/information_property_list/uibackgroundmodes?language=objc) to enable background receipt of scan information and BLE notifications
 
-See Apple's documentation about [Protected Resources](https://developer.apple.com/documentation/bundleresources/information_property_list/protected_resources) for more details. If your app needs other permissions like location, try the [cordova-custom-config plugin](https://github.com/don/cordova-plugin-ble-central/issues/700#issuecomment-538312656).
+## Cordova
 
-It is possible to delay the initialization of the plugin on iOS. Normally the Bluetooth permission dialog is shown when the app loads for the first time. Delaying the initialization of the plugin shows the permission dialog the first time the Bluetooth API is called. Set `IOS_INIT_ON_LOAD` to false when installing.
+`$ cordova plugin add cordova-plugin-ble-central --variable BLUETOOTH_USAGE_DESCRIPTION="Your description here" --variable IOS_INIT_ON_LOAD=true|false --variable BLUETOOTH_RESTORE_STATE=true|false --variable ACCESS_BACKGROUND_LOCATION=true|false`
 
-    --variable IOS_INIT_ON_LOAD=false
+It's recommended to always use the latest cordova and cordova platform packages in order to ensure correct function. This plugin generally best supports the following platforms and version ranges:
 
-### Android
+| cordova | cordova-ios | cordova-android | cordova-browser |
+| ------- | ----------- | --------------- | --------------- |
+| 10+     | 6.2.0+      | 10.0+           | not tested      |
 
-If your app targets Android 10 (API level 29) or higher, you have also the option of requesting the ACCESS_BACKGROUND_LOCATION permission. If your app has a feature that requires it, set `ACCESS_BACKGROUND_LOCATION ` to true when installing.
+All variables can be modified after installation by updating the values in `package.json`.
 
-    --variable ACCESS_BACKGROUND_LOCATION=true
+-   `BLUETOOTH_USAGE_DESCRIPTION`: [**iOS**] defines the values for [NSBluetoothAlwaysUsageDescription](https://developer.apple.com/documentation/bundleresources/information_property_list/nsbluetoothalwaysusagedescription?language=objc).
 
-# API
+-   `IOS_INIT_ON_LOAD`: [**iOS**] Prevents the Bluetooth plugin from being initialised until first access to the `ble` window object. This allows an application to warn the user before the Bluetooth access permission is requested.
 
-## Methods
+-   `BLUETOOTH_RESTORE_STATE`: [**iOS**] Enable Bluetooth state restoration, allowing an app to be woken up to receive scan results and peripheral notifications. This is needed for background scanning support. See [iOS restore state](https://developer.apple.com/library/archive/documentation/NetworkingInternetWeb/Conceptual/CoreBluetooth_concepts/CoreBluetoothBackgroundProcessingForIOSApps/PerformingTasksWhileYourAppIsInTheBackground.html#//apple_ref/doc/uid/TP40013257-CH7-SW13). For more information about background operation with this plugin, see [Background Scanning and Notifications on iOS](#background-scanning-and-notifications-on-ios).
+
+-   `ACCESS_BACKGROUND_LOCATION`: [**Android**] Tells the plugin to request the ACCESS_BACKGROUND_LOCATION permission on Android 10 & Android 11 in order for scanning to function when the app is not visible.
+
+## Android permission conflicts
+
+If you are having Android permissions conflicts with other plugins, try using the `slim` variant of the plugin instead with `cordova plugin add cordova-plugin-ble-central@slim`. This variant excludes all Android permissions, leaving it to the developer to ensure the right entries are added manually to the `AndroidManifest.xml` (see below for an example).
+
+To include the default set of permissions the plugin installs on Android SDK v31+, add the following snippet in your `config.xml` file, in the `<platform name="android">` section:
 
 - [all methods from the original plugin](https://github.com/don/cordova-plugin-ble-central#methods)
 - [`ble.upgradeFirmware`](#upgradeFirmware)

@@ -912,6 +912,7 @@ public class Peripheral extends BluetoothGattCallback {
         dfuCallback = callbackContext;
 
         final DfuServiceInitiator starter = new DfuServiceInitiator(device.getAddress())
+                .setForeground(false)
                 .setDeviceName(device.getName())
                 .setKeepBond(false)
                 .setForceDfu(false)
